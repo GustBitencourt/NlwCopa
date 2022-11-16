@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bet {
+  //id, primary key, gera automaticamente
+  id        String   @id @default(cuid())
+  title     String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  ownerId   String?
+
+  participants Participant[]
+  owner        User?         @relation(fields: [ownerId], references: [id])
+}
+
+model Participant {
+  id     String @id @default(cuid())
+  userId String
+  betId  String
+
+  guesses Guess[]
+  user    User    @relation(fields: [userId], references: [id])
+  bet     Bet     @relation(fields: [betId], references: [id])
+
+  @@unique([userId, betId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  googleId  String?  @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  participantingAt Participant[]
+  ownBets          Bet[]
+}
+
+model Game {
+  id                  String   @id @default(cuid())
+  date                DateTime
+  homeTeamCountryCode String
+  awayTeamCountryCode String
+
+  guesses Guess[]
+}
+
+model Guess {
+  id             String   @id @default(cuid())
+  homeTeamPoints Int
+  awayTeamPoints Int
+  createdAt      DateTime @default(now())
+  gameId         String
+  participantId  String
+
+  participant Participant @relation(fields: [participantId], references: [id])
+  game        Game        @relation(fields: [gameId], references: [id])
+
+  @@unique([participantId, gameId])
+}
